@@ -7765,6 +7765,7 @@ nm_device_check_connection_available (NMDevice *self,
                                       const char *specific_object)
 {
 	NMDeviceState state;
+	gboolean avail;
 
 	state = nm_device_get_state (self);
 	if (state < NM_DEVICE_STATE_UNMANAGED)
@@ -7782,7 +7783,10 @@ nm_device_check_connection_available (NMDevice *self,
 	if (!nm_device_check_connection_compatible (self, connection))
 		return FALSE;
 
-	return NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, flags, specific_object);
+	avail = NM_DEVICE_GET_CLASS (self)->check_connection_available (self, connection, flags, specific_object);
+	if (!avail)
+	nm_device_get_iface (self);
+	return avail;
 }
 
 static void

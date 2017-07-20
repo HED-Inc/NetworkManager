@@ -650,6 +650,8 @@ auto_activate_device (gpointer user_data)
 
 	data->autoactivate_id = 0;
 
+	nm_device_get_iface (data->device);
+
 	// FIXME: if a device is already activating (or activated) with a connection
 	// but another connection now overrides the current one for that device,
 	// deactivate the device and activate the new connection instead of just
@@ -673,9 +675,14 @@ auto_activate_device (gpointer user_data)
 	for (i = 0; i < connections->len; i++) {
 		NMSettingsConnection *candidate = NM_SETTINGS_CONNECTION (connections->pdata[i]);
 
-		if (!nm_settings_connection_can_autoconnect (candidate))
+		if (!nm_settings_connection_can_autoconnect (candidate)) {
+			nm_device_get_iface (data->device);
+			nm_connection_get_id (NM_CONNECTION (candidate));
 			continue;
+		}
 		if (nm_device_can_auto_connect (data->device, (NMConnection *) candidate, &specific_object)) {
+			nm_device_get_iface (data->device);
+			nm_connection_get_id (NM_CONNECTION (candidate));
 			best_connection = (NMConnection *) candidate;
 			break;
 		}

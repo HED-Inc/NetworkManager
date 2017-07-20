@@ -856,7 +856,11 @@ check_connection_available (NMDevice *device,
 		NMAccessPoint *ap;
 
 		ap = get_ap_by_path (NM_DEVICE_WIFI (device), specific_object);
-		return ap ? nm_ap_check_compatible (ap, connection) : FALSE;
+		if (ap) {
+			gboolean compat = nm_ap_check_compatible (ap, connection);
+			return compat;
+		}
+		return FALSE;
 	}
 
 	/* Ad-Hoc and AP connections are always available because they may be
@@ -880,8 +884,15 @@ check_connection_available (NMDevice *device,
 
 	/* check if its visible */
 	for (ap_iter = priv->ap_list; ap_iter; ap_iter = g_slist_next (ap_iter)) {
-		if (nm_ap_check_compatible (NM_AP (ap_iter->data), connection))
+		const GByteArray *ssid = nm_ap_get_ssid (NM_AP (ap_iter->data));
+		char *tmp = ssid ? nm_utils_ssid_to_utf8 (ssid->data, ssid->len) : "<none>";
+
+		if (nm_ap_check_compatible (NM_AP (ap_iter->data), connection)) {
+			nm_device_get_iface (device);
+			if (ssid) g_free (tmp);
 			return TRUE;
+		}
+		nm_device_get_iface (device);
 	}
 
 	return FALSE;
