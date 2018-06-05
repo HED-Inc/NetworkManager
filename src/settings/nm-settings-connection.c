@@ -2106,7 +2106,7 @@ nm_settings_connection_read_and_fill_seen_bssids (NMSettingsConnection *self)
 }
 
 #define AUTOCONNECT_RETRIES_DEFAULT 4
-#define AUTOCONNECT_RESET_RETRIES_TIMER 300
+#define AUTOCONNECT_RESET_RETRIES_TIMER 60
 
 int
 nm_settings_connection_get_autoconnect_retries (NMSettingsConnection *self)
