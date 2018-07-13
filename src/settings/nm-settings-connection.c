@@ -45,7 +45,7 @@
 
 #define AUTOCONNECT_RETRIES_UNSET        -2
 #define AUTOCONNECT_RETRIES_FOREVER      -1
-#define AUTOCONNECT_RESET_RETRIES_TIMER 300
+#define AUTOCONNECT_RESET_RETRIES_TIMER  60
 
 /*****************************************************************************/
 
