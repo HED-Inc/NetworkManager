@@ -50,7 +50,7 @@ char pppd_version[] = VERSION;
 static GDBusProxy *proxy = NULL;
 
 static void
-nm_phasechange (void *data, int arg)
+nm_phasechange (int arg)
 {
 	NMPPPStatus ppp_status = NM_PPP_STATUS_UNKNOWN;
 	char new_name[IF_NAMESIZE];
@@ -153,6 +153,16 @@ nm_phasechange (void *data, int arg)
 }
 
 static void
+nm_phasechange_hook (void *data, int arg)
+{
+	/* We send the nofication in exitnotify instead */
+	if (arg == PHASE_DEAD)
+		return;
+
+	nm_phasechange (arg);
+}
+
+static void
 nm_ip_up (void *data, int arg)
 {
 	ipcp_options opts = ipcp_gotoptions[0];
@@ -165,8 +175,8 @@ nm_ip_up (void *data, int arg)
 	g_message ("nm-ppp-plugin: (%s): ip-up event", __func__);
 
 	if (!opts.ouraddr) {
-		g_warning ("nm-ppp-plugin: (%s): didn't receive an internal IP from pppd!", __func__);
-		nm_phasechange (NULL, PHASE_DEAD);
+		g_warning ("nm-ppp-plugin: didn't receive an internal IP from pppd!");
+		nm_phasechange (PHASE_DEAD);
 		return;
 	}
 
@@ -358,7 +368,12 @@ nm_exit_notify (void *data, int arg)
 {
 	g_return_if_fail (G_IS_DBUS_PROXY (proxy));
 
-	g_message ("nm-ppp-plugin: (%s): cleaning up", __func__);
+	/* We wait until this point to notify dead phase to make sure that
+	 * the serial port has recovered already its original settings.
+	 */
+	nm_phasechange (PHASE_DEAD);
+
+	g_message ("nm-ppp-plugin: cleaning up");
 
 	g_object_unref (proxy);
 	proxy = NULL;
@@ -425,7 +440,7 @@ plugin_init (void)
 	pap_passwd_hook = get_credentials;
 	pap_check_hook = get_pap_check;
 
-	add_notifier (&phasechange, nm_phasechange, NULL);
+	add_notifier (&phasechange, nm_phasechange_hook, NULL);
 	add_notifier (&ip_up_notifier, nm_ip_up, NULL);
 	add_notifier (&exitnotify, nm_exit_notify, proxy);
 	add_ip6_notifier ();
